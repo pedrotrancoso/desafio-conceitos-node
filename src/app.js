@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { uuid, isUuid } = require("uuidv4");
+const parseStringAsArray = require("./utils/parseStringAsArray");
 
 const app = express();
 
@@ -22,9 +23,7 @@ function logRequest(request, response, next){
 function validateProjectId(request, response, next){
   const {id} = request.params;
 
-  if(!isUuid(id)){
-    return response.status(400).json({ error: 'Invalid repositorie ID.' })
-  };
+  if(!isUuid(id)) return response.status(400).json({ error: 'Invalid repositorie ID.' });
 
   return next();
 }
@@ -45,32 +44,38 @@ app.get('/repositories', (request, response) => {
 
 app.post('/repositories', (request, response) => {
   
-  const { title, url } = request.body;
-  const numLike = 0;
-  const repositorie = { id: uuid(), title, url, numLike };
+  const { title, url, techs } = request.body;
+  //const numLike = 0;
+  
+  const techsArray = parseStringAsArray(techs); 
 
-  repositories.push(repositorie);
-  return response.status(200).json(repositorie);
+  const repository = { id: uuid(), title, url, techs: techsArray, numLike: 0 };
+
+  repositories.push(repository);
+  return response.status(200).json(repository);
 
 });
 
 app.put('/repositories/:id', (request, response) => {
   const { id } = request.params;
-  const { title, url } = request.body;
+  const { title, url, techs } = request.body;
 
-  const repositorieIndex = repositories.findIndex(repositorie => repositorie.id == id);
+  const repositoryIndex = repositories.findIndex(repositorie => repositorie.id == id);
   
-  if(repositorieIndex < 0){
+  if(repositoryIndex < 0){
     return response.status(400).json({message: 'Repositorie not found.'})
   }
+
+  const techsArray = parseStringAsArray(techs); 
 
   const repositorie = {
     id,
     title,
-    url
+    url,
+    techs: techsArray
   };
 
-  repositories[repositorieIndex] = repositorie;
+  repositories[repositoryIndex] = repositorie;
   
   return response.json(repositorie);
 });
@@ -91,28 +96,19 @@ app.delete('/repositories/:id', (request, response) => {
 app.post('/repositories/:id/like', (request, response) => {
   const { id } = request.params;
   
-  const repositorieIndex = repositories.findIndex(repositorie => repositorie.id == id, 
-    repositorie.numLike += 1);
+  const repositoryIndex = repositories.findIndex(repositoryIndex => repositoryIndex.id == id);
   
-  if(repositorieIndex < 0){
+  if(repositoryIndex < 0){
     return response.status(400).json({message: 'Repositorie not found.'})
   }
-  const numLike = numLike + 1;
-
-  const repositorie = {
-    id,
-    title,
-    url,
-    numLike
-  };
-
-  repositories[repositorieIndex] = repositorie;
+    
+  repositories[repositoryIndex].numLike += 1;
   
-  return response.json(repositorie);
+  return response.status(200).json(repositories[repositoryIndex]);
 });
 
-app.listen(3030, () => {
-  console.log('😁 Back-end Started');
-});
+//app.listen(3030, () => {
+//  console.log('😁 Back-end Started');
+//});
 
 module.exports = app;
